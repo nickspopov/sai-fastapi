@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
 
-@strawberry.typ
+@strawberry.type
 class Query:
     @strawberry.field
     def hello(self) -> str:
