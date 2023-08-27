@@ -6,11 +6,15 @@ from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
 # Utils
-from typing import List, Union, cast
+from typing import List, Union
+from config.authentication import Context
 
 from graphql_utils.calendar_event import CalendarEventType
+from graphql_utils.types import Info
+from graphql_utils.user import UserType
 from graphql_utils.walk import  WalkType
 from resolvers.calendar_event import create_event_resolver, get_all_events_resolver, get_event_resolver
+from resolvers.user import me_resolver
 from resolvers.walks import get_walks_resolver
 
 @strawberry.type
@@ -18,6 +22,8 @@ class Query:
     get_event: Union[CalendarEventType, None] = strawberry.field(resolver=get_event_resolver)
     get_all_events: List[Union[CalendarEventType, None]] = strawberry.field(resolver=get_all_events_resolver)
     get_walks: List[WalkType] = strawberry.field(resolver=get_walks_resolver)
+    me: UserType = strawberry.field(resolver=me_resolver)
+
 
 @strawberry.type
 class Mutation:
@@ -25,7 +31,10 @@ class Mutation:
 
 schema = strawberry.Schema(Query, mutation=Mutation)
 
-graphql_app = GraphQLRouter(schema)
+async def get_context() -> Context:
+    return Context()
+
+graphql_app = GraphQLRouter(schema, context_getter=get_context)
 
 app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
