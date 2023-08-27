@@ -5,23 +5,13 @@ import strawberry
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
-# Mongo
-from motor.motor_asyncio import AsyncIOMotorClient
-from odmantic import AIOEngine
-
 # Utils
-from datetime import datetime
 from typing import List, Union, cast
-from database.calendar_event import CalendarEvent
-from database.walk import Walk, WalkHistory, WalkHistoryItem
 
 from graphql_utils.calendar_event import CalendarEventType
-from graphql_utils.walk import WalkHistoryItemType, WalkHistoryType, WalkType
+from graphql_utils.walk import  WalkType
 from resolvers.calendar_event import create_event_resolver, get_all_events_resolver, get_event_resolver
 from resolvers.walks import get_walks_resolver
-
-client = AsyncIOMotorClient("mongodb://<user>:<password>@cluster0.lxu2tdn.mongodb.net/")
-engine = AIOEngine(client=client, database="sai")
 
 @strawberry.type
 class Query:
