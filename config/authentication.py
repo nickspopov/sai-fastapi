@@ -4,6 +4,7 @@ from bson import ObjectId
 from strawberry.fastapi import BaseContext
 from strawberry.types import Info as _Info
 from strawberry.types.info import RootValueType
+from database.dogs import Dog
 
 from database.user import User
 from typing import Optional
@@ -22,6 +23,10 @@ class Context(BaseContext):
             return None
         
         user_db = await engine.find_one(User, {"_id": ObjectId("64eb42c7b7c18dad6bc17185")})
+        if not user_db:
+            return None
+        dogs = await engine.find(Dog, {"_id": {"$in": [ObjectId(dog) for dog in user_db.dogs]}})
+        user_db.populatedDogs = dogs
         return user_db if user_db else None
     
 

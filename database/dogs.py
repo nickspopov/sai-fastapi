@@ -3,7 +3,6 @@ from graphql_utils.dog import DogType
 from odmantic import Model
 
 class Dog(Model):
-    id: str
     name: str
     breed: str
     dateOfBirth: datetime
