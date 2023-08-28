@@ -1,0 +1,81 @@
+type CalendarEventType {
+  id: String!
+  name: String!
+  startedAt: DateTime!
+}
+
+input CreateWalkHistoryItemType {
+  latitude: Float!
+  longitude: Float!
+  timestamp: DateTime!
+}
+
+input CreateWalkHistoryType {
+  history: [CreateWalkHistoryItemType!]!
+}
+
+input CreateWalkInput {
+  startedAt: DateTime!
+  finishedAt: DateTime!
+  walkHistory: CreateWalkHistoryType!
+}
+
+"""Date with time (isoformat)"""
+scalar DateTime
+
+type DogType {
+  id: String!
+  name: String!
+  breed: String!
+  dateOfBirth: DateTime!
+  sex: String!
+}
+
+type Mutation {
+  createEvent(name: String!, startedAt: DateTime!): CalendarEventType!
+  createWalk(input: CreateWalkInput!): WalkType!
+}
+
+type Query {
+  getEvent(id: String!): CalendarEventType
+  getAllEvents: [CalendarEventType]!
+  getWalks: [WalkType!]!
+  getWalk(id: String!): WalkType
+  getWalkDayActivity(date: DateTime!): WalkDayActivity!
+  me: UserType!
+}
+
+type UserType {
+  id: String!
+  name: String!
+  dogs: [DogType!]!
+}
+
+type WalkDayActivity {
+  totalDistance: Float!
+  totalDuration: Float!
+  avgSpeed: Float!
+  avgPace: Float!
+  date: DateTime!
+}
+
+type WalkHistoryItemType {
+  latitude: Float!
+  longitude: Float!
+  timestamp: DateTime!
+}
+
+type WalkHistoryType {
+  history: [WalkHistoryItemType!]!
+}
+
+type WalkType {
+  id: String!
+  startedAt: DateTime!
+  finishedAt: DateTime!
+  walkHistory: WalkHistoryType!
+  distance: Float!
+  duration: Float!
+  avgSpeed: Float!
+  avgPace: Float!
+}
