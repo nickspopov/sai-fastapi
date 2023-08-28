@@ -11,9 +11,11 @@ class WalkHistoryItemType:
     longitude: float
     timestamp: datetime
 
+
 @strawberry.type
 class WalkHistoryType:
     history: List[WalkHistoryItemType]
+
 
 @strawberry.type
 class WalkType:
@@ -21,3 +23,22 @@ class WalkType:
     startedAt: datetime
     finishedAt: datetime
     walkHistory: WalkHistoryType
+
+
+@strawberry.input
+class CreateWalkHistoryItemType:
+    latitude: float
+    longitude: float
+    timestamp: datetime
+
+
+@strawberry.input
+class CreateWalkHistoryType:
+    history: List[CreateWalkHistoryItemType]
+
+
+@strawberry.input
+class CreateWalkInput:
+    startedAt: datetime
+    finishedAt: datetime
+    walkHistory: CreateWalkHistoryType
