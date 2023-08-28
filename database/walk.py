@@ -8,6 +8,7 @@ from typing import List
 
 from graphql_utils.walk import CreateWalkHistoryType, WalkHistoryItemType, WalkHistoryType, WalkType
 
+
 class WalkHistoryItem(EmbeddedModel):
     latitude: float = Field(...)
     longitude: float = Field(...)
@@ -22,7 +23,7 @@ class WalkHistory(EmbeddedModel):
 
     def to_graphQL(self):
         return WalkHistoryType(history=[item.to_graphQL() for item in self.history])
-    
+
     @staticmethod
     def from_graphQL_input_type(graphQLWalkHistory: CreateWalkHistoryType) -> "WalkHistory":
         return WalkHistory(history=[WalkHistoryItem(latitude=item.latitude, longitude=item.longitude, timestamp=item.timestamp) for item in graphQLWalkHistory.history])
@@ -36,6 +37,32 @@ class Walk(Model):
 
     class Config:
         collection = "walks"
-    
+
     def to_graphQL(self):
-        return WalkType(id=str(self.id), startedAt=self.startedAt, finishedAt=self.finishedAt, walkHistory=self.walkHistory.to_graphQL())
+        return WalkType(
+            id=str(self.id), startedAt=self.startedAt, finishedAt=self.finishedAt, walkHistory=self.walkHistory.to_graphQL(),
+            avgSpeed=self.get_avg_speed(), avgPace=self.get_avg_pace(), distance=self.get_distance(), duration=self.get_duration()
+        )
+
+    def get_distance_between_two_points(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        from math import cos, asin, sqrt
+        p = 0.017453292519943295
+        a = 0.5 - cos((lat2 - lat1) * p)/2 + cos(lat1 * p) * \
+            cos(lat2 * p) * (1 - cos((lon2 - lon1) * p)) / 2
+        return 12742 * asin(sqrt(a))
+
+    def get_distance(self) -> float:
+        distance = 0.0
+        for i in range(len(self.walkHistory.history) - 1):
+            distance += self.get_distance_between_two_points(
+                self.walkHistory.history[i].latitude, self.walkHistory.history[i].longitude, self.walkHistory.history[i + 1].latitude, self.walkHistory.history[i + 1].longitude)
+        return distance
+
+    def get_duration(self) -> float:
+        return (self.finishedAt - self.startedAt).total_seconds()
+
+    def get_avg_speed(self) -> float:
+        return self.get_distance() / self.get_duration()
+
+    def get_avg_pace(self) -> float:
+        return self.get_duration() / self.get_distance()

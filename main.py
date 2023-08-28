@@ -12,10 +12,10 @@ from config.authentication import Context
 from graphql_utils.calendar_event import CalendarEventType
 from graphql_utils.types import Info
 from graphql_utils.user import UserType
-from graphql_utils.walk import  WalkType
+from graphql_utils.walk import  WalkDayActivity, WalkType
 from resolvers.calendar_event import create_event_resolver, get_all_events_resolver, get_event_resolver
 from resolvers.user import me_resolver
-from resolvers.walks import create_walk_resolver, get_walk_resolver, get_walks_resolver
+from resolvers.walks import create_walk_resolver, get_walk_day_activity_resolver, get_walk_resolver, get_walks_resolver
 
 @strawberry.type
 class Query:
@@ -23,6 +23,7 @@ class Query:
     get_all_events: List[Union[CalendarEventType, None]] = strawberry.field(resolver=get_all_events_resolver)
     get_walks: List[WalkType] = strawberry.field(resolver=get_walks_resolver)
     get_walk: Optional[WalkType] = strawberry.field(resolver=get_walk_resolver)
+    get_walk_day_activity: WalkDayActivity = strawberry.field(resolver=get_walk_day_activity_resolver)
     me: UserType = strawberry.field(resolver=me_resolver)
 
 
