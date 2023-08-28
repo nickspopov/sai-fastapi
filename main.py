@@ -1,4 +1,5 @@
 # GraphQL
+from datetime import datetime
 import strawberry
 
 # FastAPI
@@ -16,6 +17,7 @@ from graphql_utils.walk import  WalkDayActivity, WalkType
 from resolvers.calendar_event import create_event_resolver, get_all_events_resolver, get_event_resolver
 from resolvers.user import me_resolver
 from resolvers.walks import create_walk_resolver, get_walk_day_activity_resolver, get_walk_resolver, get_walks_resolver
+from utils.scalars import DateTimeScalar
 
 @strawberry.type
 class Query:
@@ -32,7 +34,8 @@ class Mutation:
     create_event: CalendarEventType = strawberry.field(resolver=create_event_resolver)
     create_walk: WalkType = strawberry.field(resolver=create_walk_resolver)
 
-schema = strawberry.Schema(Query, mutation=Mutation)
+
+schema = strawberry.Schema(Query, mutation=Mutation, scalar_overrides={datetime: DateTimeScalar})
 
 async def get_context() -> Context:
     return Context()
