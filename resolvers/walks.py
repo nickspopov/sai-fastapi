@@ -1,10 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Optional
 from bson import ObjectId
 from config.authentication import check_authentication
 from database.walk import Walk, WalkHistory
 from graphql_utils.types import Info
-from graphql_utils.walk import CreateWalkInput, WalkDayActivity, WalkType
+from graphql_utils.walk import CreateWalkInput, WalkDayActivity, WalkIntervalActivity, WalkIntervalActivityItem, WalkType
 from config.database import engine
 
 
@@ -65,3 +65,33 @@ async def get_walk_day_activity_resolver(self, info: Info, date: datetime) -> Wa
         walk_day_activity.avgPace += walk.get_avg_speed()
 
     return walk_day_activity
+
+
+async def get_walk_interval_activity_by_day(self, info: Info, from_date: datetime, to_date: datetime) -> WalkIntervalActivity:
+    user = await check_authentication(info)
+
+    query = {"userId": ObjectId(user.id), "startedAt": {
+        "$gte": from_date, "$lt": to_date}}
+    db_walks = await engine.find(Walk, query)
+
+    walk_interval_activity = WalkIntervalActivity(
+        totalDistance=0.0, totalDuration=0.0, items=[])
+
+    walk_interval_activity_date_map: dict[float, float] = {}
+
+    for i in range((to_date - from_date).days):
+        walk_interval_activity_date_map[(
+            from_date + timedelta(days=i)).timestamp()] = 0.0
+
+    for walk in db_walks:
+        walk_interval_activity.totalDistance += walk.get_distance()
+        walk_interval_activity.totalDuration += walk.get_duration()
+        walk_interval_activity_date_map[walk.startedAt.replace(
+            hour=from_date.hour, minute=from_date.minute, second=from_date.second, microsecond=from_date.microsecond, tzinfo=from_date.tzinfo
+            ).timestamp()] += walk.get_duration()
+
+    for key, value in walk_interval_activity_date_map.items():
+        walk_interval_activity.items.append(WalkIntervalActivityItem(
+            duration=value, date=datetime.fromtimestamp(key, tz=from_date.tzinfo)))
+
+    return walk_interval_activity

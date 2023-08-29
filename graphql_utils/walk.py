@@ -59,6 +59,7 @@ class WalkDayActivity:
 
 @strawberry.type
 class WalkIntervalActivityItem:
+    date: datetime
     duration: float
 
 @strawberry.type
