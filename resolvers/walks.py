@@ -77,21 +77,21 @@ async def get_walk_interval_activity_by_day(self, info: Info, from_date: datetim
     walk_interval_activity = WalkIntervalActivity(
         totalDistance=0.0, totalDuration=0.0, items=[])
 
-    walk_interval_activity_date_map: dict[float, float] = {}
+    walk_interval_activity_date_map: dict[datetime, float] = {}
 
     for i in range((to_date - from_date).days):
         walk_interval_activity_date_map[(
-            from_date + timedelta(days=i)).timestamp()] = 0.0
+            from_date + timedelta(days=i))] = 0.0
 
     for walk in db_walks:
         walk_interval_activity.totalDistance += walk.get_distance()
         walk_interval_activity.totalDuration += walk.get_duration()
         walk_interval_activity_date_map[walk.startedAt.replace(
             hour=from_date.hour, minute=from_date.minute, second=from_date.second, microsecond=from_date.microsecond, tzinfo=from_date.tzinfo
-            ).timestamp()] += walk.get_duration()
+            )] += walk.get_duration()
 
     for key, value in walk_interval_activity_date_map.items():
         walk_interval_activity.items.append(WalkIntervalActivityItem(
-            duration=value, date=datetime.fromtimestamp(key, tz=from_date.tzinfo)))
+            duration=value, date=datetime.fromtimestamp(key.timestamp(), tz=from_date.tzinfo)))
 
     return walk_interval_activity
