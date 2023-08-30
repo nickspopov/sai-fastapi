@@ -6,7 +6,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from graphql_utils.calendar_event import CalendarEventType, CalendarEventTypeEnumType
 
-class CalendarEventTypeEnum(Enum):
+class CalendarEventTypeEnum(str, Enum):
     walking = "walking"
     food = "food"
     pills = "pills"
