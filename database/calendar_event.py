@@ -3,6 +3,7 @@ from bson import ObjectId
 from odmantic import Model
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from graphql_utils.calendar_event import CalendarEventType, CalendarEventTypeEnumType
 
 class CalendarEventTypeEnum(Enum):
@@ -32,4 +33,4 @@ class CalendarEvent(Model):
         collection = "calendar_events"
 
     def to_graphQL(self):
-        return CalendarEventType(id=str(self.id), title=self.title, type=self.type.to_graphQL(), startedAt=self.startedAt, endedAt=self.endedAt, notes=self.notes)
+        return CalendarEventType(id=str(self.id), title=self.title, type=self.type.to_graphQL(), startedAt=self.startedAt.replace(tzinfo=ZoneInfo("UTC")), endedAt=self.endedAt.replace(tzinfo=ZoneInfo("UTC")), notes=self.notes)
