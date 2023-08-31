@@ -19,7 +19,7 @@ async def get_event_resolver(self, info: Info, id: str) -> Union[CalendarEventTy
     if odmantic_event and odmantic_event.userId == ObjectId(user.id):
         return odmantic_event.to_graphQL()
     else:
-        return None
+        raise Exception("You are not allowed to access this event")
 
 
 async def get_events_resolver(self, info: Info, from_date: datetime, to_date: datetime) -> list[CalendarEventType]:

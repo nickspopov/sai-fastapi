@@ -21,10 +21,10 @@ from utils.scalars import DateTimeScalar
 
 @strawberry.type
 class Query:
-    get_event: Union[CalendarEventType, None] = strawberry.field(resolver=get_event_resolver)
-    get_events: List[Union[CalendarEventType, None]] = strawberry.field(resolver=get_events_resolver)
+    get_event: CalendarEventType = strawberry.field(resolver=get_event_resolver)
+    get_events: List[CalendarEventType] = strawberry.field(resolver=get_events_resolver)
     get_walks: List[WalkType] = strawberry.field(resolver=get_walks_resolver)
-    get_walk: Optional[WalkType] = strawberry.field(resolver=get_walk_resolver)
+    get_walk: WalkType = strawberry.field(resolver=get_walk_resolver)
     get_walk_day_activity: WalkDayActivity = strawberry.field(resolver=get_walk_day_activity_resolver)
     get_walk_interval_activity_by_day: WalkIntervalActivity = strawberry.field(resolver=get_walk_interval_activity_by_day)
     me: UserType = strawberry.field(resolver=me_resolver)

@@ -21,7 +21,7 @@ async def get_walk_resolver(self, info: Info, id: str) -> Optional[WalkType]:
     db_walk = await engine.find_one(Walk, {"_id": ObjectId(id)})
 
     if not db_walk:
-        return None
+        raise Exception("Not found")
 
     if db_walk.userId != ObjectId(user.id):
         raise Exception("You are not allowed to access this walk")
