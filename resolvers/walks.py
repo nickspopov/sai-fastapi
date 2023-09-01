@@ -7,11 +7,18 @@ from graphql_utils.types import Info
 from graphql_utils.walk import CreateWalkInput, WalkDayActivity, WalkIntervalActivity, WalkIntervalActivityItem, WalkType
 from config.database import engine
 
+from odmantic import query as q
+from typing import Any
 
-async def get_walks_resolver(self, info: Info) -> list[WalkType]:
+
+
+async def get_walks_resolver(self, info: Info, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, limit: Optional[int] = 10) -> list[WalkType]:
     user = await check_authentication(info)
 
-    db_walks = await engine.find(Walk, {"userId": {"$in": [ObjectId(user.id)]}})
+    query: dict[str, Any] = {"userId": ObjectId(user.id)}
+    if from_date and to_date:
+        query["startedAt"] = {"$gte": from_date, "$lt": to_date}
+    db_walks = await engine.find(Walk, query, limit=limit, sort=q.desc(Walk.startedAt))  
 
     return [walk.to_graphQL() for walk in db_walks]
 
