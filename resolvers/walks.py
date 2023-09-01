@@ -92,7 +92,7 @@ async def get_walk_interval_activity_by_day(self, info: Info, from_date: datetim
     
     day_adjustment = 0
     if from_date.hour > 0 and from_date.hour < 12:
-        day_adjustment = 1
+        day_adjustment = 1  
     if from_date.hour > 12:
         day_adjustment = -1
 
@@ -100,9 +100,11 @@ async def get_walk_interval_activity_by_day(self, info: Info, from_date: datetim
     for walk in db_walks:
         walk_interval_activity.totalDistance += walk.get_distance()
         walk_interval_activity.totalDuration += walk.get_duration()
-        walk_interval_activity_date_map[walk.startedAt.replace(
-            day=walk.startedAt.day + day_adjustment, hour=from_date.hour, minute=from_date.minute, second=from_date.second, microsecond=from_date.microsecond, tzinfo=from_date.tzinfo
-            )] += walk.get_duration()
+
+        dete_map_key = walk.startedAt.replace(
+            hour=from_date.hour, minute=from_date.minute, second=from_date.second, microsecond=from_date.microsecond, tzinfo=from_date.tzinfo
+        ) + timedelta(days=day_adjustment)
+        walk_interval_activity_date_map[dete_map_key] += walk.get_duration()
 
     for key, value in walk_interval_activity_date_map.items():
         walk_interval_activity.items.append(WalkIntervalActivityItem(
