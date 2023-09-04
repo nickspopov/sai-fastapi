@@ -7,6 +7,7 @@ from database.dogs import Dog
 from graphql_utils.user import UserType
 
 class User(Model):
+    email: str
     name: str
     dogs: List[ObjectId]
 
