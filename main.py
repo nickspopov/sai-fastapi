@@ -5,17 +5,18 @@ import strawberry
 # FastAPI
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
+from fastapi_utils.tasks import repeat_every
 
 # Utils
-from typing import List, Optional, Union
+from typing import List
 from config.authentication import Context
 
 from graphql_utils.calendar_event import CalendarEventType
-from graphql_utils.types import Info
 from graphql_utils.user import UserType
 from graphql_utils.walk import  WalkDayActivity, WalkIntervalActivity, WalkType
+from jobs.calendar_event_job import calendar_event_push_job
 from resolvers.calendar_event import create_event_resolver, get_events_resolver, get_event_resolver
-from resolvers.user import me_resolver
+from resolvers.user import me_resolver, set_push_token
 from resolvers.walks import create_walk_resolver, get_walk_day_activity_resolver, get_walk_interval_activity_by_day, get_walk_resolver, get_walks_resolver
 from utils.scalars import DateTimeScalar
 
@@ -34,6 +35,7 @@ class Query:
 class Mutation:
     create_event: CalendarEventType = strawberry.field(resolver=create_event_resolver)
     create_walk: WalkType = strawberry.field(resolver=create_walk_resolver)
+    set_push_token: UserType = strawberry.field(resolver=set_push_token)
 
 
 schema = strawberry.Schema(Query, mutation=Mutation, scalar_overrides={datetime: DateTimeScalar})
@@ -45,3 +47,12 @@ graphql_app = GraphQLRouter(schema, context_getter=get_context)
 
 app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
+
+
+@app.on_event("startup")
+@repeat_every(seconds=60)
+async def send_events_push_tokens() -> None:
+    try: 
+        await calendar_event_push_job()
+    except Exception as e:
+        print(e)

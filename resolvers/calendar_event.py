@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union
 from config.authentication import check_authentication
 from database.calendar_event import CalendarEvent, CalendarEventTypeEnum
+from database.calendar_event_job import CalendarEventJob
 
 from graphql_utils.calendar_event import CalendarEventType, CreateEventInput
 from config.database import engine
@@ -43,6 +44,11 @@ async def create_event_resolver(self, info: Info, input: CreateEventInput) -> Ca
         userId=ObjectId(user.id)
     ))
     if odmantic_event:
+        await engine.save(CalendarEventJob(
+            calendarEventId=odmantic_event.id,
+            userId=ObjectId(user.id),
+            scheduledAt=input.startedAt - timedelta(minutes=15)
+        ))
         return odmantic_event.to_graphQL()
     else:
         raise Exception("Failed to create event")

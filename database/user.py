@@ -10,6 +10,7 @@ class User(Model):
     email: str
     name: str
     dogs: List[ObjectId]
+    pushTokens: List[str]
 
     populatedDogs: List[Dog] = []
 
