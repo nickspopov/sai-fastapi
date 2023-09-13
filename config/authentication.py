@@ -18,13 +18,16 @@ directory = os.getcwd()
 cred = credentials.Certificate(directory + "/config/sai-ios-firebase-adminsdk-dmgtl-2dcabece02.json")
 firebase_admin.initialize_app(cred)
 
-user_token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE5MGFkMTE4YTk0MGFkYzlmMmY1Mzc2YjM1MjkyZmVkZThjMmQwZWUiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vc2FpLWlvcyIsImF1ZCI6InNhaS1pb3MiLCJhdXRoX3RpbWUiOjE2OTM4MTkxOTgsInVzZXJfaWQiOiI4czNiOHg4OTdzWm9CM01BazQzOVB4Y0luVEwyIiwic3ViIjoiOHMzYjh4ODk3c1pvQjNNQWs0MzlQeGNJblRMMiIsImlhdCI6MTY5MzgyNzQ4OCwiZXhwIjoxNjkzODMxMDg4LCJlbWFpbCI6ImNvc2F0MjBAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbImNvc2F0MjBAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoicGFzc3dvcmQifX0.SvSSGuqQK1KAwNEEVFtqrrw-xcciEGNmtw4gm7-P0Vl5_wKFSQQCp8gMogsXGGSxagoNZpTl6ynJkd56XJDbA9uYACSog3ZWMacJL29Huf2tM7SILHNRtWATX2PndXgmzEgq2P6bgxXRSdW8ujBtNoZLdzd72xCwmEjfrfRAhQHtG6rexbO78UqJ5UJclY03MDcBsZZ1HxfpTk3v4dQtWk0-6lcDuedqWzrYRU8kwdYFgnlErJJFXHD9DtQTWUO5lSfz1bdmrVlnSNF-41qPV91o6eT4qh_spRU5f0d2F4inGpz-hPDYxkvJnCahw63qy64Ofw-qIgwdnkY4Uk0OzA"
+SKIP_AUTH = False
 
 class Context(BaseContext):
     @cached_property
     async def user(self) -> Optional[User]:
         if not self.request:
             return None
+
+        if SKIP_AUTH:
+            return await engine.find_one(User, {"email": "dev@example.com"})
 
         authorization = self.request.headers.get("Authorization", None) 
 

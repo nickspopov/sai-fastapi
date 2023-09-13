@@ -62,13 +62,13 @@ class Walk(Model):
         return (self.finishedAt - self.startedAt).total_seconds()
 
     def get_avg_speed(self) -> float:
-        duration = self.get_duration()
+        duration = self.get_duration() / 3600
         if duration == 0:
             return 0.0
         return self.get_distance() / duration
-
+    
     def get_avg_pace(self) -> float:
         distance = self.get_distance()
         if distance == 0:
             return 0.0
-        return self.get_duration() / distance
+        return self.get_duration() / 60 / distance

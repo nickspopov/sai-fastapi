@@ -64,12 +64,18 @@ async def get_walk_day_activity_resolver(self, info: Info, date: datetime) -> Wa
 
     if not db_walks:
         return walk_day_activity
+    
+    total_avg_speed = 0.0
+    total_avg_pace = 0.0
 
     for walk in db_walks:
         walk_day_activity.totalDistance += walk.get_distance()
         walk_day_activity.totalDuration += walk.get_duration()
-        walk_day_activity.avgSpeed += walk.get_avg_speed()
-        walk_day_activity.avgPace += walk.get_avg_speed()
+        total_avg_speed += walk.get_avg_speed()
+        total_avg_pace += walk.get_avg_pace()
+
+    walk_day_activity.avgSpeed = total_avg_speed / len(db_walks)
+    walk_day_activity.avgPace = total_avg_pace / len(db_walks)
 
     return walk_day_activity
 
