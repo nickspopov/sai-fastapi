@@ -11,6 +11,13 @@ def send_push_notification_to_tokens_list(tokens: List[str], title: str, body: s
             body=body,
         ),
         tokens=tokens,
+        apns=messaging.APNSConfig(
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(
+                    sound='default',
+                ),
+            ),
+        ),
     )
     try: 
       response = messaging.send_multicast(message)
