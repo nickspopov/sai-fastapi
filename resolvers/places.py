@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from bson import ObjectId
 from config.database import engine
 from config.authentication import check_authentication
 from database.community import Community, CommunityMember, CommunityMemberLastCheckin, CommunityPlace
+from database.community_checkin_job import CommunityCheckinJob
 from database.user import User
 from graphql_utils.community import CommunityPlaceInput, CommunityType
 from graphql_utils.types import Info
@@ -145,5 +146,13 @@ async def checkin_community_place(self, info: Info, communityId: str, placeId: s
         if member.lastCheckin:
             member.lastCheckin.place = next(
                 (place for place in community.places if place.id == member.lastCheckin.placeId), None)
+            
+    await engine.save(
+        CommunityCheckinJob(
+            communityId=community.id,
+            memberId=user.id,
+            scheduledAt=date
+        )
+    )
 
     return community.to_graphQL()

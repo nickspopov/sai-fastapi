@@ -16,6 +16,7 @@ from graphql_utils.community import CommunityType
 from graphql_utils.user import UserType
 from graphql_utils.walk import  WalkDayActivity, WalkIntervalActivity, WalkType
 from jobs.calendar_event_job import calendar_event_push_job
+from jobs.community_checkin_job import community_checkin_push_job
 from resolvers.calendar_event import create_event_resolver, get_events_resolver, get_event_resolver
 from resolvers.user import me_resolver, set_push_token
 from resolvers.places import get_communities_resolver, create_community_resolver, get_community_resolver, create_community_place, checkin_community_place
@@ -61,5 +62,13 @@ app.include_router(graphql_app, prefix="/graphql")
 async def send_events_push_tokens() -> None:
     try: 
         await calendar_event_push_job()
+    except Exception as e:
+        print(e)
+
+@app.on_event("startup")
+@repeat_every(seconds=60)
+async def send_community_push_tokens() -> None:
+    try: 
+        await community_checkin_push_job()
     except Exception as e:
         print(e)
