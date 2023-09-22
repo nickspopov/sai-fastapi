@@ -19,3 +19,13 @@ class User(Model):
 
     def to_graphQL(self):
         return UserType(id=str(self.id), name=self.name, dogs=[item.to_graphQL() for item in self.populatedDogs])
+    
+
+    @staticmethod
+    def get_fake():
+        return User(
+            email="",
+            name="",
+            pushTokens=[],
+            dogs=[]
+        )
