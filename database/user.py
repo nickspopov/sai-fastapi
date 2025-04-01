@@ -18,7 +18,7 @@ class User(Model):
         collection = "users"
 
     def to_graphQL(self):
-        return UserType(id=str(self.id), name=self.name, dogs=[item.to_graphQL() for item in self.populatedDogs])
+        return UserType(id=str(self.id), name=self.name, email=self.email, dogs=[item.to_graphQL() for item in self.populatedDogs])
     
 
     @staticmethod

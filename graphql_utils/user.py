@@ -6,5 +6,6 @@ from graphql_utils.dog import DogType
 class UserType:
     id: str
     name: str
+    email: str
     dogs: List[DogType]
 
