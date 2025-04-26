@@ -38,7 +38,7 @@ A FastAPI-based GraphQL API service with MongoDB integration.
 
 1. Create and activate a virtual environment:
 ```bash
-pyenv virtualenv 3.9.18 sai-fast-api
+pyenv virtualenv 3.11.8 sai-fast-api
 pyenv activate sai-fast-api
 ```
 

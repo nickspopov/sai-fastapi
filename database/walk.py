@@ -35,8 +35,9 @@ class Walk(Model):
     walkHistory: WalkHistory = Field(WalkHistory(history=[]))
     userId: ObjectId
 
-    class Config:
-        collection = "walks"
+    model_config = {
+        "collection": "walks"
+    }
 
     def to_graphQL(self):
         return WalkType(

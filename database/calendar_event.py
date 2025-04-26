@@ -29,8 +29,9 @@ class CalendarEvent(Model):
     endedAt: datetime
     userId: ObjectId
 
-    class Config:
-        collection = "calendar_events"
+    model_config = {
+        "collection": "calendar_events"
+    }
 
     def to_graphQL(self):
         return CalendarEventType(id=str(self.id), title=self.title, type=self.type.to_graphQL(), startedAt=self.startedAt.replace(tzinfo=ZoneInfo("UTC")), endedAt=self.endedAt.replace(tzinfo=ZoneInfo("UTC")), notes=self.notes)

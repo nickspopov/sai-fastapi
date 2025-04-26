@@ -67,8 +67,9 @@ class Community(Model):
 
     owner: Optional[User] = None
 
-    class Config:
-        collection = "communities"
+    model_config = {
+        "collection": "communities"
+    }
 
     def to_graphQL(self):
         if self.owner is None:

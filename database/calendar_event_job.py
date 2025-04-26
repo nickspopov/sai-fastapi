@@ -8,5 +8,6 @@ class CalendarEventJob(Model):
     userId: ObjectId
     scheduledAt: datetime
 
-    class Config:
-        collection = "calendar_event_jobs"
+    model_config = {
+        "collection": "calendar_event_jobs"
+    }

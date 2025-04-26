@@ -8,5 +8,6 @@ class CommunityCheckinJob(Model):
     memberId: ObjectId
     scheduledAt: datetime
 
-    class Config:
-        collection = "community_checkin_jobs"
+    model_config = {
+        "collection": "community_checkin_jobs"
+    }

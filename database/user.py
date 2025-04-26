@@ -14,8 +14,9 @@ class User(Model):
 
     populatedDogs: List[Dog] = []
 
-    class Config:
-        collection = "users"
+    model_config = {
+        "collection": "users"
+    }
 
     def to_graphQL(self):
         return UserType(id=str(self.id), name=self.name, email=self.email, dogs=[item.to_graphQL() for item in self.populatedDogs])
@@ -24,6 +25,7 @@ class User(Model):
     @staticmethod
     def get_fake():
         return User(
+            id=ObjectId(),
             email="",
             name="",
             pushTokens=[],
