@@ -4,7 +4,7 @@ services:
   web:
     build: .
     ports:
-      - "8000:8000"
+      - "3000:3000"
     environment:
       - MONGODB_URL=mongodb://<user>:<password>@mongodb:27017/admin?authSource=admin
     depends_on:
