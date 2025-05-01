@@ -3,20 +3,19 @@ from datetime import datetime
 import strawberry
 
 # FastAPI
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from strawberry.fastapi import GraphQLRouter
 from fastapi_utils.tasks import repeat_every
 
 # Utils
 from typing import List
 from config.authentication import Context
+from config.database import init_db
 
 from graphql_utils.calendar_event import CalendarEventType
 from graphql_utils.community import CommunityType
 from graphql_utils.user import UserType
 from graphql_utils.walk import  WalkDayActivity, WalkIntervalActivity, WalkType
-from jobs.calendar_event_job import calendar_event_push_job
-from jobs.community_checkin_job import community_checkin_push_job
 from resolvers.calendar_event import create_event_resolver, get_events_resolver, get_event_resolver
 from resolvers.user import me_resolver, set_push_token
 from resolvers.places import get_communities_resolver, create_community_resolver, get_community_resolver, create_community_place, checkin_community_place
@@ -25,10 +24,10 @@ from utils.scalars import DateTimeScalar
 
 @strawberry.type
 class Query:
-    get_event: CalendarEventType = strawberry.field(resolver=get_event_resolver)
+    get_event: CalendarEventType | None = strawberry.field(resolver=get_event_resolver)
     get_events: List[CalendarEventType] = strawberry.field(resolver=get_events_resolver)
     get_walks: List[WalkType] = strawberry.field(resolver=get_walks_resolver)
-    get_walk: WalkType = strawberry.field(resolver=get_walk_resolver)
+    get_walk: WalkType | None = strawberry.field(resolver=get_walk_resolver)
     get_walk_day_activity: WalkDayActivity = strawberry.field(resolver=get_walk_day_activity_resolver)
     get_walk_interval_activity_by_day: WalkIntervalActivity = strawberry.field(resolver=get_walk_interval_activity_by_day)
     me: UserType = strawberry.field(resolver=me_resolver)
@@ -58,17 +57,22 @@ app.include_router(graphql_app, prefix="/graphql")
 
 
 @app.on_event("startup")
-@repeat_every(seconds=60)
-async def send_events_push_tokens() -> None:
-    try: 
-        await calendar_event_push_job()
-    except Exception as e:
-        print(e)
+def setup_db():
+    init_db()
 
-@app.on_event("startup")
-@repeat_every(seconds=60)
-async def send_community_push_tokens() -> None:
-    try: 
-        await community_checkin_push_job()
-    except Exception as e:
-        print(e)
+
+# @app.on_event("startup")
+# @repeat_every(seconds=60)
+# async def send_events_push_tokens() -> None:
+#     try: 
+#         await calendar_event_push_job()
+#     except Exception as e:
+#         print(e)
+
+# @app.on_event("startup")
+# @repeat_every(seconds=60)
+# async def send_community_push_tokens() -> None:
+#     try: 
+#         await community_checkin_push_job()
+#     except Exception as e:
+#         print(e)

@@ -1,50 +1,79 @@
-from config.database import engine
-from database.community import Community
-from database.community_checkin_job import CommunityCheckinJob
-
 from datetime import datetime, timedelta
-
-from database.user import User
-
+from sqlmodel import select, Session, col
+from config.database import engine
+from database.models import Community, CommunityMember, CommunityCheckinJob, User
 from service.notifications import send_push_notification_to_tokens_list
 
+
 async def community_checkin_push_job() -> None:
-    jobs = await engine.find(CommunityCheckinJob, {"scheduledAt": {"$lte": datetime.now()}})
+    with Session(engine) as session:
+        # Find jobs that are due
+        query = select(CommunityCheckinJob).where(
+            CommunityCheckinJob.scheduled_at <= datetime.now()
+        )
+        jobs = session.execute(query).scalars().all()
 
-    if len(jobs) == 0:
-        return
+        if len(jobs) == 0:
+            return
 
-    for job in jobs:
-        user = await engine.find_one(User, {"_id": job.memberId})
-        community = await engine.find_one(Community, {"_id": job.communityId})
-        
-        if user is None or community is None or len(community.members) < 2:
-            await engine.delete(job)
-            continue
-        
-        members = await engine.find(User, {"_id": {"$in": [member.userId for member in community.members]}})
-
-        member = next((member for member in community.members if member.userId == user.id), None)
-
-        if member is None or member.lastCheckin is None:
-            await engine.delete(job)
-            continue
-        
-        if member.lastCheckin.date < datetime.now():
-            await engine.delete(job)
-            continue
-        
-        is_it_time = member.lastCheckin.date < datetime.now() + timedelta(minutes=15)
-
-        if not is_it_time:
-            continue
-        
-        tokens = []
-
-        for member in members:
-          tokens += member.pushTokens
-
-        send_push_notification_to_tokens_list(tokens, "Pet friend go to a walk", f"{user.name} will be on {community.name} in 15 minutes")
+        for job in jobs:
+            # Load user and community
+            user = session.get(User, job.member_id)
+            community = session.get(Community, job.community_id)
+            
+            if user is None or community is None:
+                session.delete(job)
+                session.commit()
+                continue
+            
+            # Load community members
+            member_query = select(CommunityMember).where(CommunityMember.community_id == community.id)
+            members = session.execute(member_query).scalars().all()
+            
+            if len(members) < 2:
+                session.delete(job)
+                session.commit()
+                continue
+            
+            # Find the member who checked in
+            member = next((m for m in members if m.user_id == user.id), None)
+            
+            if member is None or member.last_checkin is None:
+                session.delete(job)
+                session.commit()
+                continue
+            
+            if member.last_checkin < datetime.now():
+                session.delete(job)
+                session.commit()
+                continue
+            
+            is_it_time = member.last_checkin < datetime.now() + timedelta(minutes=15)
+            
+            if not is_it_time:
+                continue
+            
+            # Load all users for notification
+            member_user_ids = [m.user_id for m in members if m.user_id]
+            if member_user_ids:
+                user_query = select(User).where(col(User.id).in_(member_user_ids))
+                users = session.execute(user_query).scalars().all()
+                
+                # Collect all push tokens
+                tokens = []
+                for u in users:
+                    if u.push_tokens:
+                        tokens.extend(u.push_tokens)
+                
+                if tokens:
+                    send_push_notification_to_tokens_list(
+                        tokens,
+                        "Pet friend go to a walk",
+                        f"{user.name} will be on {community.name} in 15 minutes"
+                    )
+            
+            session.delete(job)
+            session.commit()
 
         
         

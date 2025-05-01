@@ -1,18 +1,19 @@
 from functools import cached_property
-from bson import ObjectId
+from typing import Optional
+import os
 
 from strawberry.fastapi import BaseContext
 from strawberry.types import Info as _Info
 from strawberry.types.info import RootValueType
-from database.dogs import Dog
 
-from database.user import User
-from typing import Optional
-from config.database import engine
+from sqlmodel import Session, select
+from config.database import engine, get_session
+from database.models import User, Dog  # Updated import for SQLModel
+
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin.auth import verify_id_token
-import os
+
 directory = os.getcwd()
 
 cred = credentials.Certificate(directory + "/config/sai-ios-firebase-adminsdk-dmgtl-2dcabece02.json")
@@ -21,13 +22,35 @@ firebase_admin.initialize_app(cred)
 SKIP_AUTH = False
 
 class Context(BaseContext):
+    def __init__(self):
+        super().__init__()
+        self._session = None
+
+    @property
+    def session(self) -> Session:
+        if self._session is None:
+            self._session = Session(engine)
+        return self._session
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        if self._session is not None:
+            if exc_type is not None:
+                self._session.rollback()
+            else:
+                self._session.commit()
+            self._session.close()
+            self._session = None
+
     @cached_property
     async def user(self) -> Optional[User]:
         if not self.request:
             return None
 
         if SKIP_AUTH:
-            return await engine.find_one(User, {"email": "dev@example.com"})
+            return self.session.exec(select(User).where(User.email == "dev@example.com")).first()
 
         authorization = self.request.headers.get("Authorization", None) 
 
@@ -41,12 +64,14 @@ class Context(BaseContext):
         except:
             return None
         
-        user_db = await engine.find_one(User, {"email": user_email})
+        user_db = self.session.exec(select(User).where(User.email == user_email)).first()
         if not user_db:
             return None
-        dogs = await engine.find(Dog, {"_id": {"$in": [ObjectId(dog) for dog in user_db.dogs]}})
-        user_db.populatedDogs = dogs
-        return user_db if user_db else None
+
+        # Eager loading of dogs relationship
+        # dogs = session.exec(select(Dog).join(Dog.owners).where(User.id == user_db.id)).all()
+        
+        return user_db
     
 
 async def check_authentication(info: _Info[Context, RootValueType]) -> User:

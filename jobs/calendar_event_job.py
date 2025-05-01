@@ -1,32 +1,33 @@
+from sqlmodel import Session, select
 from config.database import engine
-from database.calendar_event import CalendarEvent
-from database.calendar_event_job import CalendarEventJob
 
 from datetime import datetime, timedelta
 
-from database.user import User
 
 from service.notifications import send_push_notification_to_tokens_list
 
 async def calendar_event_push_job() -> None:
-    jobs = await engine.find(CalendarEventJob, {"scheduledAt": {"$lte": datetime.now()}})
+    # with Session(engine) as session:
+    #     jobs = session.exec(select(CalendarEventJob).where(CalendarEventJob.scheduled_at <= datetime.now())).all()
 
-    if len(jobs) == 0:
-        return
+    #     if len(jobs) == 0:
+    #         return
 
-    for job in jobs:
-  
-        user = await engine.find_one(User, {"_id": job.userId})
-        event = await engine.find_one(CalendarEvent, {"_id": job.calendarEventId})
-        
-        if user is None or event is None:
-            await engine.delete(job)
-            continue
-        
-        result = send_push_notification_to_tokens_list(user.pushTokens, "Event reminder", f"Event {event.title} is about to start")
+    #     for job in jobs:
+    
+    #         user = session.exec(select(User).where(User.id == job.user_id)).first()
+    #         event = session.exec(select(CalendarEvent).where(CalendarEvent.id == job.calendar_event_id)).first()
+            
+    #         if user is None or event is None:
+    #             session.delete(job)
+    #             session.commit()
+    #             continue
+            
+    #         result = send_push_notification_to_tokens_list(user.pushTokens, "Event reminder", f"Event {event.title} is about to start")
 
-        if result:
-            await engine.delete(job)
+    #         if result:
+    #             session.delete(job)
+    #             session.commit()
         
         
 

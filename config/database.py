@@ -1,20 +1,38 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from odmantic import AIOEngine, Model, Field, EmbeddedModel
 import os
 from dotenv import load_dotenv
+from sqlmodel import SQLModel, create_engine, Session
+from typing import Generator, Optional
+from contextlib import contextmanager
 
-# Load environment variables
-load_dotenv()
+# Load environment variables with force override
+load_dotenv(override=True)
 
-# Get MongoDB connection details from environment variables
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-MONGODB_DB = os.getenv("MONGODB_DB", "sai")
+# Get PostgreSQL connection details from environment variables
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "postgresql://postgres:postgres@localhost:5432/sai"
+)
 
-# Create MongoDB client
-client = AsyncIOMotorClient(MONGODB_URL)
+# Ensure URL uses the correct dialect name
+if DATABASE_URL.startswith("postgres:"):
+    DATABASE_URL = "postgresql" + DATABASE_URL[8:]
 
-# Create ODMantic engine
-engine = AIOEngine(client=client, database=MONGODB_DB)
+# Create SQLModel engine
+engine = create_engine(DATABASE_URL, echo=True)
 
-# Export models and engine
-__all__ = ["Model", "Field", "EmbeddedModel", "engine"]
+def init_db():
+    """Initialize the database and create all tables"""
+    # SQLModel.metadata.create_all(engine)
+
+@contextmanager
+def get_session() -> Generator[Session, None, None]:
+    """Get a database session"""
+    session = Session(engine)
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

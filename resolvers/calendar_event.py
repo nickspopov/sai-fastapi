@@ -1,54 +1,74 @@
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Union, cast
+from sqlmodel import select
 from config.authentication import check_authentication
-from database.calendar_event import CalendarEvent, CalendarEventTypeEnum
-from database.calendar_event_job import CalendarEventJob
+from database.models import CalendarEvent, CalendarEventJob
 
 from graphql_utils.calendar_event import CalendarEventType, CreateEventInput
-from config.database import engine
-
-from bson import ObjectId
-
 from graphql_utils.types import Info
 
 
 async def get_event_resolver(self, info: Info, id: str) -> Union[CalendarEventType, None]:
     user = await check_authentication(info)
+    if not user.id:
+        raise Exception("User ID is required")
 
-    odmantic_event = await engine.find_one(CalendarEvent, {"_id": ObjectId(id)})
+    # Use SQLModel select to query the event
+    statement = select(CalendarEvent).where(
+        CalendarEvent.id == id,
+        CalendarEvent.user_id == user.id
+    )
+    event = info.context.session.exec(statement).first()
 
-    if odmantic_event and odmantic_event.userId == ObjectId(user.id):
-        return odmantic_event.to_graphQL()
-    else:
-        raise Exception("You are not allowed to access this event")
+    if not event:
+        raise Exception("Event not found or you don't have access")
+
+    return event.to_graphQL()
 
 
 async def get_events_resolver(self, info: Info, from_date: datetime, to_date: datetime) -> list[CalendarEventType]:
     user = await check_authentication(info)
+    if not user.id:
+        raise Exception("User ID is required")
 
-    query = {"userId": ObjectId(user.id), "startedAt": {
-        "$gte": from_date, "$lt": to_date}}
-    odmantic_events = await engine.find(CalendarEvent, query)
-    return [event.to_graphQL() for event in odmantic_events]
+    # Use SQLModel select with date range filter
+    statement = select(CalendarEvent).where(
+        CalendarEvent.user_id == user.id,
+        CalendarEvent.started_at >= from_date,
+        CalendarEvent.started_at < to_date
+    )
+    events = info.context.session.exec(statement).all()
+    return [event.to_graphQL() for event in events]
 
 
 async def create_event_resolver(self, info: Info, input: CreateEventInput) -> CalendarEventType:
     user = await check_authentication(info)
+    if not user.id:
+        raise Exception("User ID is required")
 
-    odmantic_event = await engine.save(CalendarEvent(
+    # Create new calendar event
+    event = CalendarEvent(
         title=input.title,
         notes=input.notes,
-        startedAt=input.startedAt,
-        type=CalendarEventTypeEnum.from_graphQL(input.type),
-        endedAt=input.endedAt,
-        userId=ObjectId(user.id)
-    ))
-    if odmantic_event:
-        await engine.save(CalendarEventJob(
-            calendarEventId=odmantic_event.id,
-            userId=ObjectId(user.id),
-            scheduledAt=input.startedAt - timedelta(minutes=15)
-        ))
-        return odmantic_event.to_graphQL()
-    else:
-        raise Exception("Failed to create event")
+        started_at=input.startedAt,
+        ended_at=input.endedAt,
+        event_type=input.type.value.lower(),
+        user_id=user.id
+    )
+    info.context.session.add(event)
+    info.context.session.commit()
+    info.context.session.refresh(event)
+
+    if not event.id:
+        raise Exception("Failed to create event - no ID generated")
+
+    # Create associated job
+    job = CalendarEventJob(
+        calendar_event_id=event.id,
+        user_id=user.id,
+        scheduled_at=input.startedAt - timedelta(minutes=15)
+    )
+    info.context.session.add(job)
+    info.context.session.commit()
+
+    return event.to_graphQL()

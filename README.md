@@ -159,3 +159,78 @@ docker-compose exec mongodb mongosh
 # Backup database
 docker-compose exec mongodb mongodump --out /backup
 ```
+
+## Database Migration
+
+This project has been migrated from MongoDB to PostgreSQL using SQLModel. Follow these steps to migrate your own data:
+
+1. Install the new dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Configure your database connection:
+   - Set the `DATABASE_URL` environment variable: `postgresql://postgres:postgres@localhost:5432/sai`
+   - Or create a `.env` file with this variable
+
+3. Initialize database migrations:
+```bash
+python migrate.py init
+```
+
+4. Run the application with the new PostgreSQL backend:
+```bash
+uvicorn main:app --reload
+```
+
+### Database Configuration
+
+The database connection is configured using environment variables:
+- `DATABASE_URL`: PostgreSQL connection string (default: `postgresql://postgres:postgres@localhost:5432/sai`)
+
+### Using Docker with PostgreSQL
+
+You can start a PostgreSQL instance using Docker:
+```bash
+docker-compose up -d postgres
+```
+
+
+## Database Migrations
+
+The project uses Alembic for database migrations. The following commands are available:
+
+### Initialize Migrations
+```bash
+python migrate.py init
+```
+
+### Create New Migration
+```bash
+python migrate.py create "Description of changes"
+```
+
+### Apply Migrations
+```bash
+python migrate.py upgrade
+python migrate.py upgrade --revision abc123  # Specific revision
+```
+
+### Rollback Migrations
+```bash
+python migrate.py downgrade
+python migrate.py downgrade --revision abc123  # Specific revision
+```
+
+### View Migration Status
+```bash
+python migrate.py history  # Show history
+python migrate.py current  # Show current revision
+```
+
+### Migration Workflow
+1. Make changes to models in database/models.py
+2. Create migration: python migrate.py create "Description"
+3. Review migration in alembic/versions/
+4. Apply migration: python migrate.py upgrade
+5. If needed, rollback: python migrate.py downgrade
