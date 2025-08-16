@@ -16,8 +16,9 @@ from graphql_utils.calendar_event import CalendarEventType
 from graphql_utils.community import CommunityType
 from graphql_utils.user import UserType
 from graphql_utils.walk import  WalkDayActivity, WalkIntervalActivity, WalkType
+from graphql_utils.dog import DogType
 from resolvers.calendar_event import create_event_resolver, get_events_resolver, get_event_resolver
-from resolvers.user import me_resolver, set_push_token
+from resolvers.user import me_resolver, set_push_token, create_dog_resolver, update_dog_resolver, delete_dog_resolver
 from resolvers.places import get_communities_resolver, create_community_resolver, get_community_resolver, create_community_place, checkin_community_place
 from resolvers.walks import create_walk_resolver, get_walk_day_activity_resolver, get_walk_interval_activity_by_day, get_walk_resolver, get_walks_resolver
 from utils.scalars import DateTimeScalar
@@ -43,6 +44,9 @@ class Mutation:
     create_community: CommunityType = strawberry.field(resolver=create_community_resolver)
     create_community_place: CommunityType = strawberry.field(resolver=create_community_place)
     checkin_community_place: CommunityType = strawberry.field(resolver=checkin_community_place)
+    create_dog: DogType = strawberry.field(resolver=create_dog_resolver)
+    update_dog: DogType = strawberry.field(resolver=update_dog_resolver)
+    delete_dog: bool = strawberry.field(resolver=delete_dog_resolver)
 
 
 schema = strawberry.Schema(Query, mutation=Mutation, scalar_overrides={datetime: DateTimeScalar})

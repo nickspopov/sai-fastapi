@@ -31,9 +31,27 @@ type DogType {
   sex: String!
 }
 
+input CreateDogInput {
+  name: String!
+  breed: String!
+  dateOfBirth: DateTimeType!
+  sex: String!
+}
+
+input UpdateDogInput {
+  id: String!
+  name: String
+  breed: String
+  dateOfBirth: DateTimeType
+  sex: String
+}
+
 type Mutation {
   createEvent(name: String!, startedAt: DateTimeType!): CalendarEventType!
   createWalk(input: CreateWalkInput!): WalkType!
+  createDog(input: CreateDogInput!): DogType!
+  updateDog(input: UpdateDogInput!): DogType!
+  deleteDog(id: String!): Boolean!
 }
 
 type Query {
