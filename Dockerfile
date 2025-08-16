@@ -2,20 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update --allow-insecure-repositories && \
+# Install system dependencies (no deprecated apt-key usage)
+RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        gnupg \
-        wget \
         postgresql-client \
-        && \
-    wget --no-check-certificate -O - https://download.docker.com/linux/debian/gpg | apt-key add - && \
-    wget --no-check-certificate -O - https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
-    apt-get update --allow-insecure-repositories && \
-    apt-get install -y --no-install-recommends \
         build-essential \
-        && \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
