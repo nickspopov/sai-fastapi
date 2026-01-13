@@ -19,7 +19,7 @@ directory = os.getcwd()
 cred = credentials.Certificate(directory + "/config/sai-ios-firebase-adminsdk-dmgtl-2dcabece02.json")
 firebase_admin.initialize_app(cred)
 
-SKIP_AUTH = False
+SKIP_AUTH = True
 
 class Context(BaseContext):
     def __init__(self):

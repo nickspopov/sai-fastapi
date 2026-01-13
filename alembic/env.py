@@ -6,8 +6,8 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# Force reload of environment variables
-load_dotenv(override=True)
+# Load environment variables from .env file (don't override existing env vars from Docker)
+load_dotenv(override=False)
 
 from config.database import DATABASE_URL
 from database.models import SQLModel

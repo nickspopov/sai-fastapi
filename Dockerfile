@@ -13,32 +13,22 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy migration-related files first
+# Copy and set up entrypoint script first
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Copy migration-related files
 COPY alembic.ini migrate.py ./
 COPY alembic ./alembic
 
 # Copy the rest of the application
 COPY . .
 
-# Debug: List contents to verify files
-RUN ls -la /app && \
-    echo "Contents of /app/alembic:" && \
-    ls -la /app/alembic
+# Ensure entrypoint has correct permissions (in case COPY . overwrote it)
+RUN chmod +x /app/entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 3000
 
-# ENTRYPOINT ["sh", "-c", "\
-#     if [ \"$CHECK_DB_CONNECTION\" = \"true\" ]; then \
-#         echo 'Waiting for PostgreSQL to be ready...' && \
-#         while ! pg_isready -h postgres -U postgres; do \
-#             sleep 1; \
-#         done; \
-#     fi && \
-#     echo 'Running database migrations...' && \
-#     python migrate.py upgrade && \
-#     echo 'Starting FastAPI application...' && \
-#     exec uvicorn main:app --host 0.0.0.0 --port 3000 \
-# "] 
-# Set the entrypoint script
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3000"] 
+# Use entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"] 

@@ -4,7 +4,7 @@ services:
   web:
     build: .
     ports:
-      - "3000:3000"
+      - "8000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/sai
       - CHECK_DB_CONNECTION=true

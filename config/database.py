@@ -4,8 +4,8 @@ from sqlmodel import SQLModel, create_engine, Session
 from typing import Generator, Optional
 from contextlib import contextmanager
 
-# Load environment variables with force override
-load_dotenv(override=True)
+# Load environment variables from .env file (don't override existing env vars from Docker)
+load_dotenv(override=False)
 
 # Get PostgreSQL connection details from environment variables
 DATABASE_URL = os.getenv(

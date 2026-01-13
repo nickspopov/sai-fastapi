@@ -1,12 +1,12 @@
 # SAI FastAPI
 
-A FastAPI-based GraphQL API service with MongoDB integration.
+A FastAPI-based GraphQL API service with PostgreSQL integration.
 
 ## Features
 
 - FastAPI with GraphQL support using Strawberry
-- MongoDB database integration
-- Docker and Docker Compose support
+- PostgreSQL database integration with SQLModel
+- Docker and Docker Compose support with automatic migrations
 - Background jobs for calendar events and community check-ins
 - RESTful API endpoints
 
@@ -14,7 +14,7 @@ A FastAPI-based GraphQL API service with MongoDB integration.
 
 - Python 3.9 or higher
 - Docker and Docker Compose (for containerized deployment)
-- MongoDB (if running locally)
+- PostgreSQL (if running locally without Docker)
 
 ## Project Structure
 
@@ -59,29 +59,49 @@ uvicorn main:app --reload
 
 ### Docker Deployment
 
+**Full Stack (with PostgreSQL database):**
+
+Use `docker-compose-with-database.yaml` for a complete setup with automatic database migrations:
+
+1. Build and start all services (database + API):
+```bash
+docker-compose -f docker-compose-with-database.yaml up --build
+```
+
+Migrations will run automatically on startup before the application starts.
+
+2. For detached mode (background):
+```bash
+docker-compose -f docker-compose-with-database.yaml up -d --build
+```
+
+3. Stop the services:
+```bash
+docker-compose -f docker-compose-with-database.yaml down
+```
+
+4. Clean start (remove volumes and data):
+```bash
+docker-compose -f docker-compose-with-database.yaml down -v
+```
+
+5. View logs:
+```bash
+docker-compose -f docker-compose-with-database.yaml logs -f
+```
+
+**Simple Deployment (external database):**
+
+If you have an external PostgreSQL database, you can use the default docker-compose.yaml:
+
 1. Build and start the services:
 ```bash
 docker-compose up --build
 ```
 
-2. For detached mode (background):
-```bash
-docker-compose up -d --build
-```
-
-3. Stop the services:
+2. Stop the services:
 ```bash
 docker-compose down
-```
-
-4. View logs:
-```bash
-docker-compose logs -f
-```
-
-5. *Optional* - Run MongoDB locally:
-```bash
-docker-compose up -d mongodb
 ```
 
 ## API Endpoints
@@ -93,7 +113,7 @@ docker-compose up -d mongodb
 Create a `.env` file in the root directory with the following variables:
 
 ```env
-MONGODB_URL=mongodb://localhost:27017
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/sai
 # Add other environment variables as needed
 ```
 
@@ -153,11 +173,14 @@ docker-compose up -d --build web
 
 ### Database Management
 ```bash
-# Access MongoDB shell
-docker-compose exec mongodb mongosh
+# Access PostgreSQL shell (when using docker-compose-with-database.yaml)
+docker-compose -f docker-compose-with-database.yaml exec postgres psql -U postgres -d sai
+
+# View all tables
+docker-compose -f docker-compose-with-database.yaml exec postgres psql -U postgres -d sai -c "\dt"
 
 # Backup database
-docker-compose exec mongodb mongodump --out /backup
+docker-compose -f docker-compose-with-database.yaml exec postgres pg_dump -U postgres sai > backup.sql
 ```
 
 ## Database Migration
