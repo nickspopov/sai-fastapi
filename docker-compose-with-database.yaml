@@ -3,8 +3,8 @@ version: '3.8'
 services:
   web:
     build: .
-    ports:
-      - "8000:3000"
+    expose:
+      - "3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/sai
       - CHECK_DB_CONNECTION=true
@@ -15,8 +15,6 @@ services:
 
   postgres:
     image: postgres:15
-    ports:
-      - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
