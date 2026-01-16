@@ -1,9 +1,10 @@
-from operator import methodcaller
-from graphql import GraphQLError
-import strawberry
-import dateutil.parser
-from typing import Callable
+from collections.abc import Callable
 from datetime import datetime
+from operator import methodcaller
+
+import dateutil.parser
+import strawberry
+from graphql import GraphQLError
 
 
 def wrap_parser(parser: Callable, type_: str) -> Callable:
@@ -11,8 +12,7 @@ def wrap_parser(parser: Callable, type_: str) -> Callable:
         try:
             return parser(value)
         except ValueError as e:
-            raise GraphQLError(
-                f'Value cannot represent a {type_}: "{value}". {e}')
+            raise GraphQLError(f'Value cannot represent a {type_}: "{value}". {e}') from e
 
     return inner
 

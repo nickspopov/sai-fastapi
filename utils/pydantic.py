@@ -1,4 +1,3 @@
-
 from bson.objectid import ObjectId as BsonObjectId
 
 
@@ -10,5 +9,5 @@ class PydanticObjectId(BsonObjectId):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, BsonObjectId):
-            raise TypeError('ObjectId required')
+            raise TypeError("ObjectId required")
         return v

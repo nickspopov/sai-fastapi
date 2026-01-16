@@ -1,22 +1,21 @@
 from datetime import datetime, timedelta
-from typing import Union, cast
+
 from sqlmodel import select
+
 from config.authentication import check_authentication
 from database.models import CalendarEvent, CalendarEventJob
-
 from graphql_utils.calendar_event import CalendarEventType, CreateEventInput
-from graphql_utils.types import Info
+from graphql_utils.info import Info
 
 
-async def get_event_resolver(self, info: Info, id: str) -> Union[CalendarEventType, None]:
+async def get_event_resolver(self, info: Info, id: str) -> CalendarEventType | None:
     user = await check_authentication(info)
     if not user.id:
         raise Exception("User ID is required")
 
     # Use SQLModel select to query the event
     statement = select(CalendarEvent).where(
-        CalendarEvent.id == id,
-        CalendarEvent.user_id == user.id
+        CalendarEvent.id == id, CalendarEvent.user_id == user.id
     )
     event = info.context.session.exec(statement).first()
 
@@ -26,7 +25,9 @@ async def get_event_resolver(self, info: Info, id: str) -> Union[CalendarEventTy
     return event.to_graphQL()
 
 
-async def get_events_resolver(self, info: Info, from_date: datetime, to_date: datetime) -> list[CalendarEventType]:
+async def get_events_resolver(
+    self, info: Info, from_date: datetime, to_date: datetime
+) -> list[CalendarEventType]:
     user = await check_authentication(info)
     if not user.id:
         raise Exception("User ID is required")
@@ -35,7 +36,7 @@ async def get_events_resolver(self, info: Info, from_date: datetime, to_date: da
     statement = select(CalendarEvent).where(
         CalendarEvent.user_id == user.id,
         CalendarEvent.started_at >= from_date,
-        CalendarEvent.started_at < to_date
+        CalendarEvent.started_at < to_date,
     )
     events = info.context.session.exec(statement).all()
     return [event.to_graphQL() for event in events]
@@ -53,7 +54,7 @@ async def create_event_resolver(self, info: Info, input: CreateEventInput) -> Ca
         started_at=input.startedAt,
         ended_at=input.endedAt,
         event_type=input.type.value.lower(),
-        user_id=user.id
+        user_id=user.id,
     )
     info.context.session.add(event)
     info.context.session.commit()
@@ -66,7 +67,7 @@ async def create_event_resolver(self, info: Info, input: CreateEventInput) -> Ca
     job = CalendarEventJob(
         calendar_event_id=event.id,
         user_id=user.id,
-        scheduled_at=input.startedAt - timedelta(minutes=15)
+        scheduled_at=input.startedAt - timedelta(minutes=15),
     )
     info.context.session.add(job)
     info.context.session.commit()

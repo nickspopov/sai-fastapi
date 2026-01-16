@@ -1,8 +1,7 @@
-
-from typing import List
 from firebase_admin import messaging
 
-def send_push_notification_to_tokens_list(tokens: List[str], title: str, body: str) -> bool:
+
+def send_push_notification_to_tokens_list(tokens: list[str], title: str, body: str) -> bool:
     if not tokens or len(tokens) == 0:
         return False
     message = messaging.MulticastMessage(
@@ -14,15 +13,15 @@ def send_push_notification_to_tokens_list(tokens: List[str], title: str, body: s
         apns=messaging.APNSConfig(
             payload=messaging.APNSPayload(
                 aps=messaging.Aps(
-                    sound='default',
+                    sound="default",
                 ),
             ),
         ),
     )
-    try: 
-      response = messaging.send_multicast(message)
-      print('Successfully sent message:', response)
-      return True
-    except:
-      print('Error sending message')
-      return False
+    try:
+        response = messaging.send_multicast(message)
+        print(f"Successfully sent message: {response.success_count} succeeded")
+        return True
+    except Exception as e:
+        print(f"Error sending message: {e}")
+        return False

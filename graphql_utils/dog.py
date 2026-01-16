@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Optional
 
 import strawberry
+
 
 @strawberry.type
 class DogType:
@@ -23,7 +23,7 @@ class CreateDogInput:
 @strawberry.input
 class UpdateDogInput:
     id: str
-    name: Optional[str] = None
-    breed: Optional[str] = None
-    dateOfBirth: Optional[datetime] = None
-    sex: Optional[str] = None
+    name: str | None = None
+    breed: str | None = None
+    dateOfBirth: datetime | None = None
+    sex: str | None = None

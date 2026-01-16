@@ -7,4 +7,10 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - SQL_ECHO=${SQL_ECHO:-false}
+      - SKIP_AUTH=${SKIP_AUTH:-false}
+      - DEFAULT_DEV_USER_EMAIL=${DEFAULT_DEV_USER_EMAIL:-}
+      - FIREBASE_CREDENTIALS_PATH=${FIREBASE_CREDENTIALS_PATH:-/app/config/firebase-credentials.json}
+    volumes:
+      - ${FIREBASE_CREDENTIALS_FILE:-./config/firebase-credentials.json}:/app/config/firebase-credentials.json:ro
     restart: unless-stopped

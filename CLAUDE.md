@@ -47,6 +47,27 @@ python migrate.py current           # View current revision
 python migrate.py history           # View history
 ```
 
+### Code Quality Tools
+```bash
+# Install dev dependencies (includes ruff, mypy, pre-commit, pytest)
+pip install -r requirements-dev.txt
+
+# Run linter
+ruff check .
+
+# Run formatter
+ruff format .
+
+# Run type checker
+mypy .
+
+# Set up pre-commit hooks (runs ruff and mypy on commit)
+pre-commit install
+
+# Run all pre-commit hooks manually
+pre-commit run --all-files
+```
+
 ## Architecture
 
 ### Database Layer (PostgreSQL + SQLModel)
@@ -60,14 +81,14 @@ python migrate.py history           # View history
 
 **Database Connection** (`config/database.py`):
 - Connection via `DATABASE_URL` env var (default: `postgresql://postgres:postgres@localhost:5432/sai`)
-- SQLModel engine with echo=True for SQL logging
+- SQL logging controlled by `SQL_ECHO` env var (default: `false`)
 
 ### GraphQL Layer (Strawberry)
 
 **Type Definitions** (`graphql_utils/`):
 - GraphQL types are defined separately from SQLModel models
 - Each domain has its own type file: `user.py`, `dog.py`, `community.py`, `walk.py`, `calendar_event.py`
-- **Typed Info**: Use `Info` from `graphql_utils/types.py` (typed alias with Context)
+- **Typed Info**: Use `Info` from `graphql_utils/info.py` (typed alias with Context)
 
 **Resolvers** (`resolvers/`):
 - All resolvers are async functions with signature: `async def resolver(self, info: Info, ...) -> Type`
@@ -79,7 +100,9 @@ python migrate.py history           # View history
 ### Authentication (`config/authentication.py`)
 
 - `Context` class manages database session lifecycle and user authentication
-- `SKIP_AUTH = True` for development (uses default user `dev@example.com`)
+- `SKIP_AUTH` env var enables dev mode (set to `true` to bypass Firebase auth)
+- `DEFAULT_DEV_USER_EMAIL` env var specifies which user to authenticate as in dev mode
+- `FIREBASE_CREDENTIALS_PATH` env var points to the Firebase service account JSON
 - Production: verifies Firebase token from `Authorization` header
 - `check_authentication(info)` helper raises exception if user not authenticated
 
@@ -108,13 +131,22 @@ python migrate.py history           # View history
 
 ## Environment Variables
 
-```
+```bash
+# Database
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/sai
+SQL_ECHO=false                    # Set to true to log SQL queries
+
+# Authentication
+SKIP_AUTH=false                   # Set to true for local dev without Firebase
+DEFAULT_DEV_USER_EMAIL=           # Email of user to auth as when SKIP_AUTH=true
+FIREBASE_CREDENTIALS_PATH=./config/firebase-credentials.json
 ```
 
-Firebase credentials: `config/sai-ios-firebase-adminsdk-dmgtl-2dcabece02.json`
+See `.env.example` for a complete template.
 
 ## API Access
 
 - GraphQL endpoint: `http://localhost:3000/graphql`
 - GraphQL playground available at the same URL
+- Health check: `GET /health` (liveness probe)
+- Readiness check: `GET /health/ready` (verifies database connectivity)

@@ -1,7 +1,6 @@
-from typing import Optional
-from bson import ObjectId
-import strawberry
 from datetime import datetime
+
+import strawberry
 
 from graphql_utils.user import UserType
 
@@ -23,7 +22,7 @@ class CommunityMemberLastCheckinType:
 @strawberry.type
 class CommunityMemberType:
     user: UserType
-    lastCheckin: Optional[CommunityMemberLastCheckinType]
+    lastCheckin: CommunityMemberLastCheckinType | None
 
 
 @strawberry.type
@@ -41,4 +40,3 @@ class CommunityPlaceInput:
     name: str
     lat: float
     lon: float
-    

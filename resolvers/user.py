@@ -1,28 +1,25 @@
-from datetime import datetime
 from config.authentication import check_authentication
-from config.database import engine
-from sqlmodel import Session, select
-
-from graphql_utils.types import Info
-from graphql_utils.user import UserType
-from graphql_utils.dog import DogType, CreateDogInput, UpdateDogInput
 from database.models import Dog
+from graphql_utils.dog import CreateDogInput, DogType, UpdateDogInput
+from graphql_utils.info import Info
+from graphql_utils.user import UserType
 
 
 async def me_resolver(self, info: Info) -> UserType:
-    user = await check_authentication(info)    
+    user = await check_authentication(info)
     return user.to_graphQL()
+
 
 async def set_push_token(self, info: Info, token: str) -> UserType:
     user = await check_authentication(info)
-    
+
     if not user.push_tokens:
         user.push_tokens = []
-    
+
     if token not in user.push_tokens:
         user.push_tokens.append(token)
         info.context.session.commit()
-    
+
     return user.to_graphQL()
 
 
@@ -32,12 +29,7 @@ async def create_dog_resolver(self, info: Info, input: CreateDogInput) -> DogTyp
     if not user.id:
         raise Exception("User not found")
 
-    dog = Dog(
-        name=input.name,
-        breed=input.breed,
-        date_of_birth=input.dateOfBirth,
-        sex=input.sex
-    )
+    dog = Dog(name=input.name, breed=input.breed, date_of_birth=input.dateOfBirth, sex=input.sex)
 
     info.context.session.add(dog)
     # Link dog to user via relationship

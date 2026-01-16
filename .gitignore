@@ -35,3 +35,6 @@ ENV/
 Thumbs.db 
 
 .env
+
+# Firebase credentials
+config/*firebase*.json

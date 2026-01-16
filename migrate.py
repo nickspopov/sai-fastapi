@@ -1,22 +1,23 @@
-import subprocess
 import argparse
 import os
-import shlex
+import subprocess
+
 
 def run_alembic(command_args: list[str]):
     """Run an Alembic command with args"""
     cmd = ["alembic"] + command_args
     subprocess.run(cmd, check=True)
 
+
 def init_migrations():
     """Initialize migrations"""
     print("Initializing database migrations...")
-    
+
     # Check if alembic directory exists
     if not os.path.exists("alembic"):
         print("Initializing alembic...")
         run_alembic(["init", "alembic"])
-    
+
     # Create and run initial migration
     print("Creating initial migration...")
     try:
@@ -24,9 +25,9 @@ def init_migrations():
         versions_dir = os.path.join("alembic", "versions")
         if os.path.exists(versions_dir):
             for f in os.listdir(versions_dir):
-                if f.endswith('.py'):
+                if f.endswith(".py"):
                     os.remove(os.path.join(versions_dir, f))
-        
+
         run_alembic(["revision", "--autogenerate", "-m", "Initial migration"])
         print("Applying migration...")
         run_alembic(["upgrade", "head"])
@@ -34,6 +35,7 @@ def init_migrations():
     except subprocess.CalledProcessError as e:
         print(f"Error during migration: {str(e)}")
         raise
+
 
 def create_migration(description: str):
     """Create a new migration with the given description"""
@@ -44,6 +46,7 @@ def create_migration(description: str):
     except subprocess.CalledProcessError as e:
         print(f"Error creating migration: {str(e)}")
         raise
+
 
 def upgrade_migration(revision: str | None = None):
     """Upgrade database to specified revision or head if not specified"""
@@ -56,6 +59,7 @@ def upgrade_migration(revision: str | None = None):
         print(f"Error during upgrade: {str(e)}")
         raise
 
+
 def downgrade_migration(revision: str | None = None):
     """Downgrade database to specified revision or -1 if not specified"""
     target = revision if revision else "-1"
@@ -67,6 +71,7 @@ def downgrade_migration(revision: str | None = None):
         print(f"Error during downgrade: {str(e)}")
         raise
 
+
 def show_history():
     """Show migration history"""
     print("Migration history:")
@@ -75,6 +80,7 @@ def show_history():
     except subprocess.CalledProcessError as e:
         print(f"Error showing history: {str(e)}")
         raise
+
 
 def show_current():
     """Show current revision"""
@@ -85,15 +91,19 @@ def show_current():
         print(f"Error showing current revision: {str(e)}")
         raise
 
+
 def main():
     parser = argparse.ArgumentParser(description="Database migration tool")
-    parser.add_argument("command", choices=["init", "create", "upgrade", "downgrade", "history", "current"], 
-                       help="Migration command to run")
+    parser.add_argument(
+        "command",
+        choices=["init", "create", "upgrade", "downgrade", "history", "current"],
+        help="Migration command to run",
+    )
     parser.add_argument("--revision", help="Specific revision for upgrade/downgrade commands")
     parser.add_argument("description", nargs="?", help="Migration description for create command")
-    
+
     args = parser.parse_args()
-    
+
     if args.command == "init":
         init_migrations()
     elif args.command == "create":
@@ -109,5 +119,6 @@ def main():
     elif args.command == "current":
         show_current()
 
+
 if __name__ == "__main__":
-    main() 
+    main()

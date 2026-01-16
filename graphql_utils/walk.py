@@ -1,8 +1,8 @@
-import strawberry
-
 # Utils
 from datetime import datetime
-from typing import List
+
+import strawberry
+
 
 # General Types
 @strawberry.type
@@ -14,7 +14,7 @@ class WalkHistoryItemType:
 
 @strawberry.type
 class WalkHistoryType:
-    history: List[WalkHistoryItemType]
+    history: list[WalkHistoryItemType]
 
 
 @strawberry.type
@@ -28,6 +28,7 @@ class WalkType:
     avgSpeed: float
     avgPace: float
 
+
 # Inputs
 @strawberry.input
 class CreateWalkHistoryItemType:
@@ -38,7 +39,7 @@ class CreateWalkHistoryItemType:
 
 @strawberry.input
 class CreateWalkHistoryType:
-    history: List[CreateWalkHistoryItemType]
+    history: list[CreateWalkHistoryItemType]
 
 
 @strawberry.input
@@ -57,13 +58,15 @@ class WalkDayActivity:
     avgPace: float
     date: datetime
 
+
 @strawberry.type
 class WalkIntervalActivityItem:
     date: datetime
     duration: float
 
+
 @strawberry.type
 class WalkIntervalActivity:
     totalDistance: float
     totalDuration: float
-    items: List[WalkIntervalActivityItem]
+    items: list[WalkIntervalActivityItem]

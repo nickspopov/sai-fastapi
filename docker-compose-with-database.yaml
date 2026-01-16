@@ -7,6 +7,9 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/sai
+      - SQL_ECHO=${SQL_ECHO:-true}
+      - SKIP_AUTH=${SKIP_AUTH:-true}
+      - DEFAULT_DEV_USER_EMAIL=${DEFAULT_DEV_USER_EMAIL:-}
       - CHECK_DB_CONNECTION=true
       - RUN_MIGRATIONS=true
     depends_on:
