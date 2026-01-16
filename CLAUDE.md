@@ -191,7 +191,7 @@ Firebase credentials are loaded from: `config/sai-ios-firebase-adminsdk-dmgtl-2d
 
 ## API Access
 
-- GraphQL endpoint: `http://localhost:8000/graphql`
+- GraphQL endpoint: `http://localhost:3000/graphql`
 - GraphQL playground available at the same URL
-- Local dev runs on port 8000 (default uvicorn)
-- Docker (with-database) exposes port 8000 (mapped 8000:3000, container runs on 3000)
+- Local dev runs on port 3000 (default uvicorn)
+- Docker (with-database) exposes port 3000 (mapped 3000:3000)

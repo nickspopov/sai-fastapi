@@ -34,7 +34,9 @@ A FastAPI-based GraphQL API service with PostgreSQL integration.
 
 ## Getting Started
 
-### Local Development
+### Local Development (Recommended)
+
+For local development with debugging capabilities:
 
 1. Create and activate a virtual environment:
 ```bash
@@ -47,66 +49,78 @@ pyenv activate sai-fast-api
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
+3. Set up environment variables (create `.env` file):
 ```bash
-cp .env.example .env  # Create and configure your .env file
+DATABASE_URL=postgresql://user:password@host:port/database
 ```
 
-4. Run the application:
+4. Run the application with hot reload:
 ```bash
 uvicorn main:app --reload
 ```
 
-### Docker Deployment
+This approach allows you to debug the application and see changes in real-time.
 
-**Full Stack (with PostgreSQL database):**
+### Docker Deployment (Recommended for Production)
 
-Use `docker-compose-with-database.yaml` for a complete setup with automatic database migrations:
+Use the default `docker-compose.yaml` with an external PostgreSQL database:
+
+1. Set up your `.env` file with your database URL:
+```bash
+DATABASE_URL=postgresql://user:password@host:port/database
+```
+
+2. Build and start the services:
+```bash
+docker-compose up --build
+```
+
+3. For detached mode (background):
+```bash
+docker-compose up -d --build
+```
+
+4. Stop the services:
+```bash
+docker-compose down
+```
+
+5. View logs:
+```bash
+docker-compose logs -f
+```
+
+**Note:** Migrations are NOT run automatically with this setup. You should run migrations manually against your external database.
+
+### Alternative: Docker with Embedded PostgreSQL
+
+If you need a quick all-in-one setup for testing, use `docker-compose-with-database.yaml`:
 
 1. Build and start all services (database + API):
 ```bash
 docker-compose -f docker-compose-with-database.yaml up --build
 ```
 
-Migrations will run automatically on startup before the application starts.
+Migrations will run automatically on startup.
 
-2. For detached mode (background):
+2. For detached mode:
 ```bash
 docker-compose -f docker-compose-with-database.yaml up -d --build
 ```
 
-3. Stop the services:
+3. Stop services:
 ```bash
 docker-compose -f docker-compose-with-database.yaml down
 ```
 
-4. Clean start (remove volumes and data):
+4. Clean start (remove volumes):
 ```bash
 docker-compose -f docker-compose-with-database.yaml down -v
 ```
 
-5. View logs:
-```bash
-docker-compose -f docker-compose-with-database.yaml logs -f
-```
-
-**Simple Deployment (external database):**
-
-If you have an external PostgreSQL database, you can use the default docker-compose.yaml:
-
-1. Build and start the services:
-```bash
-docker-compose up --build
-```
-
-2. Stop the services:
-```bash
-docker-compose down
-```
-
 ## API Endpoints
 
-- GraphQL API: `http://localhost:8000/graphql`
+- GraphQL API: `http://localhost:3000/graphql`
 
 ## Environment Variables
 

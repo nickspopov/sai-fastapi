@@ -7,7 +7,4 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
-      - CHECK_DB_CONNECTION=false
-    volumes:
-      - .:/app
     restart: unless-stopped

@@ -4,21 +4,18 @@ services:
   web:
     build: .
     ports:
-      - "8000:3000"
+      - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/sai
       - CHECK_DB_CONNECTION=true
+      - RUN_MIGRATIONS=true
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - .:/app
     restart: unless-stopped
 
   postgres:
     image: postgres:15
-    ports:
-      - "5432:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
