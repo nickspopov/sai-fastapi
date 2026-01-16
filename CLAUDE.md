@@ -18,63 +18,33 @@ pyenv activate sai-fast-api
 pip install -r requirements.txt
 
 # Run development server (with hot reload)
-uvicorn main:app --reload
+uvicorn main:app --reload --port 3000
 ```
 
 ### Docker
 
-**Full stack with PostgreSQL (recommended):**
+**Full stack with PostgreSQL (recommended for testing):**
 ```bash
-# Build and run (migrations run automatically via entrypoint.sh)
 docker-compose -f docker-compose-with-database.yaml up --build
 
-# Detached mode
-docker-compose -f docker-compose-with-database.yaml up -d --build
-
-# Stop services
-docker-compose -f docker-compose-with-database.yaml down
-
-# Clean start (remove volumes)
-docker-compose -f docker-compose-with-database.yaml down -v
-
-# View logs
-docker-compose -f docker-compose-with-database.yaml logs -f
+# Migrations run automatically via entrypoint.sh
+# Stop: docker-compose -f docker-compose-with-database.yaml down
+# Clean start: docker-compose -f docker-compose-with-database.yaml down -v
 ```
 
-**Note:** The `entrypoint.sh` script automatically:
-1. Waits for PostgreSQL to be ready
-2. Runs database migrations (`python migrate.py upgrade`)
-3. Starts the FastAPI application
-
-**External database:**
+**External database (production):**
 ```bash
-# If using external PostgreSQL database
 docker-compose up --build
 ```
 
 ### Database Migrations
 ```bash
-# Initialize migrations (first time only)
-python migrate.py init
-
-# Create new migration after model changes
-python migrate.py create "Description of changes"
-
-# Apply migrations
-python migrate.py upgrade
-
-# Rollback migration
-python migrate.py downgrade
-
-# View migration status
-python migrate.py current
-python migrate.py history
-```
-
-### Testing
-```bash
-pytest  # No test suite currently exists
-flake8  # Check code style
+python migrate.py init              # First time only
+python migrate.py create "message"  # Create migration after model changes
+python migrate.py upgrade           # Apply migrations
+python migrate.py downgrade         # Rollback
+python migrate.py current           # View current revision
+python migrate.py history           # View history
 ```
 
 ## Architecture
@@ -86,112 +56,65 @@ flake8  # Check code style
 - Models include a `to_graphQL()` method that converts SQLModel instances to Strawberry GraphQL types
 - Key models: `User`, `Dog`, `Community`, `CommunityMember`, `CommunityPlace`, `Walk`, `WalkInterval`, `CalendarEvent`
 - Many-to-many relationships use explicit link tables (e.g., `UserDog`)
-- Walk model includes distance/speed calculation methods using haversine formula
+- **Important**: Models with forward references must call `Model.model_rebuild()` at end of file
 
 **Database Connection** (`config/database.py`):
 - Connection via `DATABASE_URL` env var (default: `postgresql://postgres:postgres@localhost:5432/sai`)
 - SQLModel engine with echo=True for SQL logging
-- `get_session()` context manager handles commit/rollback automatically
-- `init_db()` is called on FastAPI startup (currently commented out for table creation)
 
 ### GraphQL Layer (Strawberry)
-
-**Schema Definition** (`main.py`):
-- Single `Query` and `Mutation` root types
-- Custom `DateTimeScalar` for datetime handling
-- Context-based dependency injection for database sessions and authentication
 
 **Type Definitions** (`graphql_utils/`):
 - GraphQL types are defined separately from SQLModel models
 - Each domain has its own type file: `user.py`, `dog.py`, `community.py`, `walk.py`, `calendar_event.py`
-- Input types use `@strawberry.input` decorator (e.g., `CreateDogInput`, `UpdateDogInput`)
+- **Typed Info**: Use `Info` from `graphql_utils/types.py` (typed alias with Context)
 
 **Resolvers** (`resolvers/`):
-- All resolvers are async functions
-- Each resolver receives `info: Info` parameter containing context (session, user)
-- Authentication checked via `check_authentication(info)` helper
-- Session management happens through `info.context.session`
-- Pattern: authenticate → query/modify data → commit → return GraphQL type
+- All resolvers are async functions with signature: `async def resolver(self, info: Info, ...) -> Type`
+- **Note**: `self` parameter is required for Strawberry field resolvers even though unused
+- Authentication: `user = await check_authentication(info)`
+- Session access: `info.context.session`
+- Pattern: authenticate → query/modify → commit → return `model.to_graphQL()`
 
 ### Authentication (`config/authentication.py`)
 
-**Context System**:
-- `Context` class extends `BaseContext` and manages database session lifecycle
-- `user` property is a cached property that:
-  - If `SKIP_AUTH=True`: returns default user (`dev@example.com`)
-  - Otherwise: verifies Firebase token from `Authorization` header
-  - Queries user from database by email
-- `check_authentication()` helper raises exception if user not authenticated
+- `Context` class manages database session lifecycle and user authentication
+- `SKIP_AUTH = True` for development (uses default user `dev@example.com`)
+- Production: verifies Firebase token from `Authorization` header
+- `check_authentication(info)` helper raises exception if user not authenticated
 
-**Important**: `SKIP_AUTH` flag currently set to `True` for development
+### Background Jobs (`jobs/`)
 
-### Background Jobs
-
-**Structure** (`jobs/`):
-- `calendar_event_job.py`: Push notifications for calendar events
-- `community_checkin_job.py`: Push notifications for community check-ins
-- Jobs currently commented out in `main.py` startup events
-
-**Pattern**: Jobs use `@repeat_every(seconds=60)` decorator from fastapi-utils
+- `calendar_event_job.py`, `community_checkin_job.py`: Push notification jobs
+- Currently commented out in `main.py`
+- Pattern: `@repeat_every(seconds=60)` decorator from fastapi-utils
 
 ## Key Patterns
 
 ### Adding a New Entity
 
-1. **Define SQLModel** in `database/models.py`:
-   - Inherit from `UUID` for standard ID
-   - Add relationships using `Relationship()`
-   - Implement `to_graphQL()` method
+1. **SQLModel** (`database/models.py`): Inherit from `UUID`, add `Relationship()`, implement `to_graphQL()`, add `Model.model_rebuild()` at end
+2. **GraphQL types** (`graphql_utils/[entity].py`): `@strawberry.type` and `@strawberry.input`
+3. **Resolvers** (`resolvers/[entity].py`): async functions with `self` and `info: Info` params
+4. **Register** (`main.py`): Add to `Query`/`Mutation` classes with `strawberry.field(resolver=...)`
+5. **Migration**: `python migrate.py create "Add [entity]" && python migrate.py upgrade`
 
-2. **Define GraphQL types** in `graphql_utils/[entity].py`:
-   - Create `@strawberry.type` for the entity
-   - Create `@strawberry.input` for mutations
+### Session Management
 
-3. **Create resolvers** in `resolvers/[entity].py`:
-   - All resolvers are async
-   - Use `check_authentication(info)` for protected operations
-   - Access session via `info.context.session`
-   - Commit changes before returning
-
-4. **Register in schema** (`main.py`):
-   - Add queries to `Query` class
-   - Add mutations to `Mutation` class
-   - Import resolver functions
-
-5. **Create migration**:
-   ```bash
-   python migrate.py create "Add [entity] model"
-   python migrate.py upgrade
-   ```
-
-### Database Session Management
-
-The Context class manages sessions:
-- Session created lazily on first access via `info.context.session`
-- Auto-commit on successful response
-- Auto-rollback on exceptions
-- Manual commits needed for intermediate operations
-
-### Working with Relationships
-
-When querying relationships:
-- SQLModel doesn't auto-eager load by default
-- Access relationships directly (e.g., `user.dogs`) - SQLModel will lazy load
-- For complex queries, use explicit joins with SQLModel `select()` and `.join()`
-- Refresh entities after commits to get updated relationship data: `session.refresh(entity)`
+- Session created lazily via `info.context.session`
+- Auto-commit on success, auto-rollback on exception
+- Call `session.commit()` for intermediate operations
+- Call `session.refresh(entity)` after commit to get updated relationship data
 
 ## Environment Variables
 
-Required variables (create `.env` file):
 ```
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/sai
 ```
 
-Firebase credentials are loaded from: `config/sai-ios-firebase-adminsdk-dmgtl-2dcabece02.json`
+Firebase credentials: `config/sai-ios-firebase-adminsdk-dmgtl-2dcabece02.json`
 
 ## API Access
 
 - GraphQL endpoint: `http://localhost:3000/graphql`
 - GraphQL playground available at the same URL
-- Local dev runs on port 3000 (default uvicorn)
-- Docker (with-database) exposes port 3000 (mapped 3000:3000)
