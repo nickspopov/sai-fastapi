@@ -13,4 +13,5 @@ services:
       - FIREBASE_CREDENTIALS_PATH=${FIREBASE_CREDENTIALS_PATH:-/app/config/firebase-credentials.json}
     volumes:
       - ${FIREBASE_CREDENTIALS_FILE:-./config/firebase-credentials.json}:/app/config/firebase-credentials.json:ro
+
     restart: unless-stopped
