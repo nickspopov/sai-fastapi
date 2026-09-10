@@ -1,273 +1,60 @@
-# SAI FastAPI
+# sai-fastapi
 
-A FastAPI-based GraphQL API service with PostgreSQL integration.
+GraphQL backend for [sai](https://github.com/nickspopov/sai-ios), a dog walking & pet care iOS app. FastAPI + Strawberry GraphQL + SQLModel on PostgreSQL, Firebase for auth and push, Alembic migrations, Docker. Started in August 2023 (originally on MongoDB/Motor, migrated to Postgres in 2025).
 
-## Features
+## What's in it
 
-- FastAPI with GraphQL support using Strawberry
-- PostgreSQL database integration with SQLModel
-- Docker and Docker Compose support with automatic migrations
-- Background jobs for calendar events and community check-ins
-- RESTful API endpoints
+- **Schema-first GraphQL** — `schema.graphql` is the contract shared with the iOS client (Apollo codegen reads it); Strawberry types are mapped from SQLModel models via `to_graphQL()`.
+- **Walks** — the client uploads raw GPS intervals; the server computes distance (haversine over consecutive points), duration, average speed and pace. `getWalkIntervalActivityByDay(fromDate, toDate)` aggregates per day in one query so the app's today/week/month/year stats don't fetch every walk.
+- **Calendar events** — typed pet care events (walking, food, pills, grooming, vet, other) with a job table (`CalendarEventJob`) for scheduled push notifications.
+- **Communities** — places + members with periodic check-in jobs (`CommunityCheckinJob`).
+- **Auth** — Firebase ID token verified per request in the Strawberry context; `SKIP_AUTH=true` swaps in a fixed dev user for local work without Firebase.
+- **Push** — FCM multicast via `firebase-admin` (`service/notifications.py`).
+- **Ops** — `/health` and `/ready` (DB ping) endpoints, `entrypoint.sh` waits for Postgres and runs migrations, ruff + pre-commit.
 
-## Prerequisites
+## Run
 
-- Python 3.9 or higher
-- Docker and Docker Compose (for containerized deployment)
-- PostgreSQL (if running locally without Docker)
-
-## Project Structure
-
-```
-.
-├── config/           # Configuration files
-├── database/         # Database models and connections
-├── graphql_utils/    # GraphQL type definitions
-├── jobs/            # Background jobs
-├── resolvers/       # GraphQL resolvers
-├── service/         # Business logic services
-├── utils/           # Utility functions
-├── main.py          # Application entry point
-├── schema.graphql   # GraphQL schema
-└── requirements.txt # Python dependencies
-```
-
-## Getting Started
-
-### Local Development (Recommended)
-
-For local development with debugging capabilities:
-
-1. Create and activate a virtual environment:
-```bash
-pyenv virtualenv 3.11.8 sai-fast-api
-pyenv activate sai-fast-api
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Set up environment variables (create `.env` file):
-```bash
-DATABASE_URL=postgresql://user:password@host:port/database
-```
-
-4. Run the application with hot reload:
-```bash
-uvicorn main:app --reload
-```
-
-This approach allows you to debug the application and see changes in real-time.
-
-### Docker Deployment (Recommended for Production)
-
-Use the default `docker-compose.yaml` with an external PostgreSQL database:
-
-1. Set up your `.env` file with your database URL:
-```bash
-DATABASE_URL=postgresql://user:password@host:port/database
-```
-
-2. Build and start the services:
-```bash
-docker-compose up --build
-```
-
-3. For detached mode (background):
-```bash
-docker-compose up -d --build
-```
-
-4. Stop the services:
-```bash
-docker-compose down
-```
-
-5. View logs:
-```bash
-docker-compose logs -f
-```
-
-**Note:** Migrations are NOT run automatically with this setup. You should run migrations manually against your external database.
-
-### Alternative: Docker with Embedded PostgreSQL
-
-If you need a quick all-in-one setup for testing, use `docker-compose-with-database.yaml`:
-
-1. Build and start all services (database + API):
-```bash
-docker-compose -f docker-compose-with-database.yaml up --build
-```
-
-Migrations will run automatically on startup.
-
-2. For detached mode:
-```bash
-docker-compose -f docker-compose-with-database.yaml up -d --build
-```
-
-3. Stop services:
-```bash
-docker-compose -f docker-compose-with-database.yaml down
-```
-
-4. Clean start (remove volumes):
-```bash
-docker-compose -f docker-compose-with-database.yaml down -v
-```
-
-## API Endpoints
-
-- GraphQL API: `http://localhost:3000/graphql`
-
-## Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/sai
-# Add other environment variables as needed
-```
-
-## Development
-
-### Running Tests
+Full stack (Postgres + API on `:3000`, migrations run on start):
 
 ```bash
-pytest
+docker compose -f docker-compose-with-database.yaml up --build
 ```
 
-### Code Style
-
-This project follows PEP 8 guidelines. You can check your code style using:
+Local:
 
 ```bash
-flake8
-```
-
-### Background Jobs
-
-The application includes two background jobs that run every 60 seconds:
-- Calendar event push notifications
-- Community check-in push notifications
-
-## Docker Commands Reference
-
-### Build and Run
-```bash
-# Build images
-docker-compose build
-
-# Start services
-docker-compose up
-
-# Start services in detached mode
-docker-compose up -d
-
-# Stop services
-docker-compose down
-
-# View logs
-docker-compose logs -f
-```
-
-### Container Management
-```bash
-# List running containers
-docker-compose ps
-
-# Restart a service
-docker-compose restart web
-
-# Rebuild and restart a service
-docker-compose up -d --build web
-```
-
-### Database Management
-```bash
-# Access PostgreSQL shell (when using docker-compose-with-database.yaml)
-docker-compose -f docker-compose-with-database.yaml exec postgres psql -U postgres -d sai
-
-# View all tables
-docker-compose -f docker-compose-with-database.yaml exec postgres psql -U postgres -d sai -c "\dt"
-
-# Backup database
-docker-compose -f docker-compose-with-database.yaml exec postgres pg_dump -U postgres sai > backup.sql
-```
-
-## Database Migration
-
-This project has been migrated from MongoDB to PostgreSQL using SQLModel. Follow these steps to migrate your own data:
-
-1. Install the new dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Configure your database connection:
-   - Set the `DATABASE_URL` environment variable: `postgresql://postgres:postgres@localhost:5432/sai`
-   - Or create a `.env` file with this variable
-
-3. Initialize database migrations:
-```bash
-python migrate.py init
-```
-
-4. Run the application with the new PostgreSQL backend:
-```bash
-uvicorn main:app --reload
-```
-
-### Database Configuration
-
-The database connection is configured using environment variables:
-- `DATABASE_URL`: PostgreSQL connection string (default: `postgresql://postgres:postgres@localhost:5432/sai`)
-
-### Using Docker with PostgreSQL
-
-You can start a PostgreSQL instance using Docker:
-```bash
-docker-compose up -d postgres
-```
-
-
-## Database Migrations
-
-The project uses Alembic for database migrations. The following commands are available:
-
-### Initialize Migrations
-```bash
-python migrate.py init
-```
-
-### Create New Migration
-```bash
-python migrate.py create "Description of changes"
-```
-
-### Apply Migrations
-```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+cp .env.example .env            # set DATABASE_URL, SKIP_AUTH=true, DEFAULT_DEV_USER_EMAIL
 python migrate.py upgrade
-python migrate.py upgrade --revision abc123  # Specific revision
+uvicorn main:app --reload       # GraphiQL at http://localhost:8000/graphql
 ```
 
-### Rollback Migrations
+The default user for `SKIP_AUTH` is created by migration `bfb8d5639915`; set `DEFAULT_DEV_USER_EMAIL` to its email.
+
+Firebase: put a service-account JSON at `FIREBASE_CREDENTIALS_PATH` (default `./config/firebase-credentials.json`, gitignored). Required unless `SKIP_AUTH=true`.
+
+## Layout
+
+```
+main.py             FastAPI app, GraphQL router, health endpoints, background job hooks
+schema.graphql      GraphQL schema (source of truth for the iOS client)
+graphql_utils/      Strawberry types, inputs, enums
+resolvers/          user, walks, calendar_event, places
+database/models.py  SQLModel tables: User, Dog, Walk, WalkInterval, CalendarEvent, Community, jobs
+config/             database engine, authentication context (Firebase)
+service/            push notifications
+jobs/               calendar event + community check-in push jobs
+alembic/            migrations (python migrate.py upgrade|downgrade|revision)
+```
+
+## Migrations
+
 ```bash
-python migrate.py downgrade
-python migrate.py downgrade --revision abc123  # Specific revision
+python migrate.py revision "add something"   # autogenerate
+python migrate.py upgrade
 ```
 
-### View Migration Status
-```bash
-python migrate.py history  # Show history
-python migrate.py current  # Show current revision
-```
+## License
 
-### Migration Workflow
-1. Make changes to models in database/models.py
-2. Create migration: python migrate.py create "Description"
-3. Review migration in alembic/versions/
-4. Apply migration: python migrate.py upgrade
-5. If needed, rollback: python migrate.py downgrade
+MIT © Nick Popov
